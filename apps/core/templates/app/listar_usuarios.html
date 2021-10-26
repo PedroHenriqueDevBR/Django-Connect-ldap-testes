@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem dos usuarios</title>
+</head>
+
+<body>
+
+    <h3>Usuários</h3>
+
+    <p>Cadastrar novo usuário</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            <label for="primeiro_nome">Primeiro nome</label><br>
+            <input type="text" name="primeiro_nome" id="primeiro_nome">
+        </p>
+        <p>
+            <label for="ultimo_nome">Ultimo nome</label><br>
+            <input type="text" name="ultimo_nome" id="ultimo_nome">
+        </p>
+        <p>
+            <label for="senha">Senha</label><br>
+            <input type="text" name="senha" id="senha">
+        </p>
+        <button type="submit">Registrar</button>
+    </form>
+
+
+    <p>Usuários localizados no LDAP</p>
+
+    <table border="1px solid">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Username</th>
+                <th>email</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.name }}</td>
+                <td>{{ usuario.username }}</td>
+                <td>{{ usuario.principal_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+
+</html>

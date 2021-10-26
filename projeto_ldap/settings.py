@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import ldap
-from django_auth_ldap.config import LDAPSearch, GroupOfNamesType, LDAPSearchUnion, PosixGroupType
+from django_auth_ldap.config import ActiveDirectoryGroupType, LDAPSearch, GroupOfNamesType, LDAPSearchUnion, PosixGroupType
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -129,61 +129,50 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 
-
 # Baseline configuration.
 AUTH_LDAP_SERVER_URI = "ldap://0.0.0.0:389"
 AUTH_LDAP_PROTOCOL_VERSION = 3
-
-# Auth configuration
-AUTH_LDAP_BIND_DN = 'CN="Username",OU=path,OU=path,DC=root,DC=root'
-AUTH_LDAP_BIND_PASSWORD = "password"
-AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    "DC=root,DC=roott", ldap.SCOPE_SUBTREE, "(sAMAccountName=%(user)s)"
-)
-AUTH_LDAP_USER_DN_TEMPLATE = None
-# Set up the basic group parameters.
-AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
-    "dc=root,dc=root",
-    ldap.SCOPE_SUBTREE,
-    "(objectClass=top)",
-)
-AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
+LDAP_IGNORE_CERT_ERRORS = True
 AUTH_LDAP_GLOBAL_OPTIONS = {
-    ldap.OPT_X_TLS_REQUIRE_CERT: False,
-    ldap.OPT_X_TLS_DEMAND: True,
     ldap.OPT_REFERRALS: 0,
 }
 
-# Simple group restrictions
-AUTH_LDAP_REQUIRE_GROUP = 'OU=Users,DC=root,DC=root'
-
-# Populate the Django user from the LDAP directory.
+# Auth configuration
+AUTH_LDAP_BIND_DN = 'CN="alguem",DC=teste,DC=net'
+AUTH_LDAP_BIND_PASSWORD = "senha"
+AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    "DC=teste,DC=net", ldap.SCOPE_SUBTREE, "(sAMAccountName=%(user)s)"
+)
+AUTH_LDAP_USER_DN_TEMPLATE = None
 AUTH_LDAP_USER_ATTR_MAP = {
     "first_name": "givenName",
     "last_name": "sn",
     "email": "mail",
-    "username": "sAMAccountName",
-    # "password": "userPassword"
 }
 
-# AUTH_LDAP_GROUP_MAPPING = {
-#   'CN="Domain Users",OU=Users,DC=defteste,DC=net': "staff",
-#   'CN="Domain Users",OU=Users,DC=defteste,DC=net': "active",
-#   'CN="Domain Admins",OU=Users,DC=defteste,DC=net': "superuser",
-# }
+# Set up the basic group parameters.
+
+# Simple group restrictions
+group_path = 'cn=enabled,dc=teste,dc=net'
+#AUTH_LDAP_REQUIRE_GROUP = group_path
+
+AUTH_LDAP_GROUP_TYPE = ActiveDirectoryGroupType()
+AUTH_LDAP_MIRROR_GROUPS = True
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+    "dc=teste,dc=net",
+    ldap.SCOPE_SUBTREE,
+    "(objectClass=group)",
+)
 
 AUTH_LDAP_USER_FLAGS_BY_GROUP = {
-    "is_active": 'CN="Domain Users",OU=Users,DC=root,DC=root',
-    "is_staff": 'CN="Domain Users",OU=Users,DC=root,DC=root',
-    "is_superuser": 'CN="Domain Admins",OU=Users,DC=root,DC=root'
+    "is_staff": group_path,
+    "is_superuser": group_path
 }
 
 # This is the default, but I like to be explicit.
 AUTH_LDAP_ALWAYS_UPDATE_USER = True
-# Use LDAP group membership to calculate group permissions.
 AUTH_LDAP_FIND_GROUP_PERMS = True
-# LDAP traffic.
-AUTH_LDAP_CACHE_TIMEOUT = 3600
+AUTH_LDAP_CACHE_TIMEOUT = 0
 
 # Keep ModelBackend around for per-user permissions and maybe a local
 # superuser.
