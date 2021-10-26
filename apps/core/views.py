@@ -1,16 +1,16 @@
 from django.http import request
 from django.shortcuts import redirect, render
 from django.views.generic.base import View
+from django.contrib import messages
 
 
 import ldap.modlist as modlist
 import ldap
-import base64, sys
 
 
 def get_connection():
-    username = 'tony@teste.net'
-    password = 'senha'
+    username = 'username@teste.net'
+    password = 'senha123'
 
     conn = ldap.initialize("ldap://0.0.0.0:389") # Conectado através do "telnet 172.16.255.115 389"
     conn.set_option(ldap.OPT_REFERRALS, 0)
@@ -29,9 +29,9 @@ class UsuariosView(View):
         for dn, entry in busca:
             try:
                 usuarios.append({
-                    'name': entry['displayName'][0],
-                    'username': entry['sAMAccountName'][0],
-                    'principal_name': entry['userPrincipalName'][0],
+                    'name': entry['displayName'][0].decode(),
+                    'username': entry['sAMAccountName'][0].decode(),
+                    'principal_name': entry['userPrincipalName'][0].decode(),
                 })
             except:
                 continue
@@ -40,29 +40,39 @@ class UsuariosView(View):
 
     def post(self, request):
         # Endpoint para testes
-        name = "Tester"
-        second_name = "Um"
-        fullname = name + " " + second_name
-        mail = "{}.{}@teste.net".format(name, second_name)
-        company_id = "{}.{}".format(name, second_name)
-        password = "senha"
+        primeiro_nome = request.POST.get('primeiro_nome')
+        ultimo_nome = request.POST.get('ultimo_nome')
 
-        base_dn = "OU=Users,DC=teste,DC=net"
-        user_dn = 'CN=' + name + ' '  + second_name + ',' + base_dn
+        if len(primeiro_nome) == 0 or len(ultimo_nome) == 0:
+            messages.add_message(request, messages.INFO, 'Informe o primeiro e o ultimo nome')
+            return redirect('listagem_usuarios') 
+
+        nome_completo = primeiro_nome + " " + ultimo_nome
+        email = "{}.{}@teste.net".format(primeiro_nome, ultimo_nome)
+        company_id = "{}.{}".format(primeiro_nome, ultimo_nome)
+
+        base_dn = "OU=teste,DC=teste,DC=net"
+        user_dn = 'CN=' + nome_completo + ',' + base_dn
 
         modlist = [
-            ("objectClass", [b"inetOrgPerson", b"posixAccount", b"shadowAccount"]),
-            ("uid", [b"tester01"]),
-            ("sn", [b"tester"]),
-            ("givenName", [b"Tester"]),
-            ("mail", [b"tester.um@teste.net"]),
-            ("cn", [b"Tester Um"]),
-            ("displayName", [b"Tester Um"]),
-            ("gecos", [b"Tester Um"]),
+            ("objectClass", [b"User", b"posixAccount", b"shadowAccount"]),
+            ("cn", [bytes(nome_completo, encoding='utf8')]),
+            ("uid", [bytes(company_id, encoding='utf8')]),
+            ("userPrincipalName", [bytes(company_id, encoding='utf8')]),
+            ("sAMAccountName", [bytes(company_id, encoding='utf8')]),
+            ("givenName", [bytes(primeiro_nome, encoding='utf8')]),
+            ("sn", [bytes(ultimo_nome, encoding='utf8')]),
+            ("mail", [bytes(email, encoding='utf8')]),
+            ("displayName", [bytes(nome_completo, encoding='utf8')]),
+            ("gecos", [bytes(nome_completo, encoding='utf8')]),
+            # ("userAccountControl", [bytes('512', encoding='utf8')]), # Regra que define o usuario como desbloqueado (Impedida pelo Active Directory)
         ]
 
         conn = get_connection()
         conn.add_s(user_dn, modlist)
+        # atualizar Password
+        # mod_list = [(ldap.MOD_REPLACE, 'unicodePwd', ['teste123'])] # Tentativa de modificar a senha (Impedida pela politica de segurança do Active Directory)
+        # conn.modify_s(user_dn, mod_list)
 
         return redirect('listagem_usuarios')
 
