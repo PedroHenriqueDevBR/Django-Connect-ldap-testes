@@ -12,7 +12,7 @@ def get_connection():
     username = 'username@teste.net'
     password = 'senha123'
 
-    conn = ldap.initialize("ldap://0.0.0.0:389") # Conectado através do "telnet 172.16.255.115 389"
+    conn = ldap.initialize("ldap://0.0.0.0:389")
     conn.set_option(ldap.OPT_REFERRALS, 0)
     
     conn.simple_bind_s(username, password)
